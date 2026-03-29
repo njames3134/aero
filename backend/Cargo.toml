@@ -1,0 +1,11 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum-server = "0.7"
+axum = { version = "0.7", features = ["tokio", "http1"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+sqlx = { version = "0.7", features = ["postgres", "runtime-tokio"] }
