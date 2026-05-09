@@ -19,6 +19,8 @@ services:
     container_name: backend
     environment:
       DATABASE_URL: postgres://postgres:postgres@db:5432/aero
+      STRAVA_CLIENT_ID: ${STRAVA_CLIENT_ID}
+      STRAVA_CLIENT_SECRET: ${STRAVA_CLIENT_SECRET}
     depends_on:
       - db
     ports:

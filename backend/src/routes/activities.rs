@@ -1,27 +1,50 @@
-use axum::{Json, extract::State};
+use axum::{Json, extract::State, http::StatusCode};
 use crate::app_state::AppState;
-use crate::models::activity::{Activity, CreateActivity};
+use crate::models::domain::activity::{Activity, ActivityStreams};
+use axum::{extract::Path};
 
 pub async fn get_activities(
     State(state): State<AppState>,
-) -> Json<Vec<Activity>> {
-    let activities = crate::services::activities::get_activities(&state.db)
+) -> Result<Json<Vec<Activity>>, StatusCode> {
+    let activities = state
+        .activity
+        .get_activities()
         .await
-        .unwrap_or_default();
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Json(activities)
+    Ok(Json(activities))
 }
 
-pub async fn create_activity(
+pub async fn get_activity(
     State(state): State<AppState>,
-    Json(payload): Json<CreateActivity>,
-) -> Json<Activity> {
-    let activity = crate::services::activities::create_activity(
-        &state.db,
-        payload,
-    )
-    .await
-    .unwrap();
+    Path(id): Path<i64>,
+) -> Result<Json<Activity>, StatusCode> {
+    let activity = crate::db::activities::get_by_id(&state.activity.db, id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    Json(activity)
+    match activity {
+        Some(row) => {
+            let domain: Activity = row.into();
+            Ok(Json(domain))
+        }
+        None => Err(StatusCode::NOT_FOUND),
+    }
+}
+
+pub async fn get_streams(
+    State(state): State<AppState>,
+    Path(activity_id): Path<i64>,
+) -> Result<Json<ActivityStreams>, StatusCode> {
+    let streams = crate::db::activities::get_streams(&state.activity.db, activity_id)
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    match streams {
+        Some(row) => {
+            let domain: ActivityStreams = row.into();
+            Ok(Json(domain))
+        }
+        None => Err(StatusCode::NOT_FOUND),
+    }
 }

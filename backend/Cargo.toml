@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-axum-server = "0.7"
 axum = { version = "0.7", features = ["tokio", "http1"] }
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
-sqlx = { version = "0.7", features = ["postgres", "runtime-tokio"] }
+serde_json = "1.0"
+sqlx = { version = "0.8", features = ["postgres", "runtime-tokio", "macros", "chrono"] }
+chrono = { version = "0.4", features = ["serde"] }
+reqwest = { version = "0.12", features = ["json"] }
+anyhow = "1"

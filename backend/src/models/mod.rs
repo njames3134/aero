@@ -1,3 +1,3 @@
-pub mod activity;
-pub mod user;
-pub mod activity_stream;
+pub mod db;
+pub mod domain;
+pub mod external;

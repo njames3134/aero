@@ -1,6 +1,8 @@
-use sqlx::PgPool;
+use crate::services::strava_service::StravaService;
+use crate::services::activities::ActivityService;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: PgPool,
+    pub activity: ActivityService,
+    pub strava: StravaService,
 }
