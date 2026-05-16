@@ -1,10 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import type { Activity } from "../../types/activity";
 import { metersToMiles } from "../../lib/units";
-import {
-  formatDuration,
-  formatMph,
-} from "../../lib/formatters";
+import { formatDuration, formatPace, formatSwimPace } from "../../lib/formatters";
 import { MiniMap } from "../MiniMap";
 import { ActivityBadge } from "./ActivityBadge";
 import { ActivityStat } from "./ActivityStat";
@@ -15,116 +12,101 @@ interface ActivityCardProps {
   activity: Activity;
 }
 
-export default function ActivityCard({
-  activity,
-}: ActivityCardProps) {
+function NoMapPlaceholder({ type }: { type: string }) {
+  const palette: Record<string, string> = {
+    Ride: "from-orange-500/10 via-orange-500/5 to-zinc-950",
+    Run: "from-green-500/10 via-green-500/5 to-zinc-950",
+    Swim: "from-cyan-500/10 via-cyan-500/5 to-zinc-950",
+  };
+
+  return (
+    <div className={`h-full w-full bg-gradient-to-br ${palette[type] ?? "from-zinc-900 to-zinc-950"} flex items-center justify-center`}>
+      <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(45deg,_white_1px,_transparent_1px)] [background-size:18px_18px]" />
+      <div className="z-10 text-[15px] tracking-widest uppercase text-zinc-500">
+        Indoor
+      </div>
+    </div>
+  );
+}
+
+export default function ActivityCard({ activity }: ActivityCardProps) {
   const navigate = useNavigate();
 
-  const date = new Date(
-    activity.start_date
-  ).toLocaleDateString("en-US", {
+  const date = new Date(activity.start_date).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
   });
 
+  const speedChip = () => {
+    if (activity.activity_type === "Run" && activity.average_speed) {
+      const mph = activity.average_speed * 2.23694;
+      return formatPace(mph);
+    }
+    if (activity.activity_type === "Swim" && activity.average_speed) {
+      return formatSwimPace(activity.average_speed);
+    }
+    return null;
+  };
+
+  const hasMap = Boolean(activity.summary_polyline);
+
   return (
     <Card
-      onClick={() =>
-        navigate(`/activities/${activity.id}`)
-      }
+      onClick={() => navigate(`/activities/${activity.id}`)}
       className="
-        group
-        overflow-hidden
-        cursor-pointer
-        transition
-        hover:border-white/20
-        hover:shadow-lg
-        hover:shadow-black/40
+        group overflow-hidden cursor-pointer transition
+        bg-[#141414] border-[#1e1e1e]
+        hover:border-[#2e2e2e] hover:shadow-lg hover:shadow-black/40
       "
     >
-
-      <div className="relative h-44 bg-zinc-950">
-        {/* MAP */}
+      <div className="relative h-44 bg-[#0d1117] isolate">
         <div className="absolute inset-0 z-0">
-          {activity.summary_polyline ? (
+          {hasMap ? (
             <MiniMap
               encoded={activity.summary_polyline}
               className="h-full w-full"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-3xl text-zinc-500">
-              {activity.activity_type === "Run" && "🏃"}
-              {activity.activity_type === "Ride" && "🚴"}
-              {activity.activity_type === "Walk" && "🚶"}
-            </div>
+            <NoMapPlaceholder type={activity.activity_type} />
           )}
         </div>
 
-        {/* overlay */}
-        <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-t from-zinc-900/50 to-transparent" />
+        <div className="absolute inset-0 z-10 pointer-events-none bg-gradient-to-t from-[#141414]/90 to-transparent" />
 
-        {/* badge */}
-        <div className="absolute top-3 right-3 z-20">
-          <ActivityBadge type={activity.activity_type} />
+        <div className="absolute top-2.5 right-2.5 z-50 pointer-events-none">
+          <div className="pointer-events-auto">
+            <ActivityBadge type={activity.activity_type} />
+          </div>
         </div>
       </div>
 
-      {/* BODY */}
-      <CardContent className="space-y-4 p-4">
-        {/* date */}
-        <div className="text-xs text-zinc-500">
-          {date}
-        </div>
+      <CardContent className="space-y-3 p-3.5">
+        <div className="text-[11px] text-zinc-600">{date}</div>
 
-        {/* stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <ActivityStat
-            label="DIST"
-            value={`${metersToMiles(
-              activity.distance
-            ).toFixed(1)} mi`}
+            label="Dist"
+            value={`${metersToMiles(activity.distance).toFixed(1)} mi`}
           />
-
           <ActivityStat
-            label="TIME"
-            value={formatDuration(
-              activity.moving_time
-            )}
+            label="Time"
+            value={formatDuration(activity.moving_time)}
           />
-
           <ActivityStat
-            label="ELEV"
-            value={`${Math.round(
-              activity.total_elevation_gain
-            )} m`}
+            label="Elev"
+            value={`${Math.round(activity.total_elevation_gain)} m`}
           />
         </div>
 
-        {/* chips */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {activity.average_heartrate && (
-            <Chip>
-              {Math.round(
-                activity.average_heartrate
-              )}{" "}
-              bpm
-            </Chip>
+            <Chip>{Math.round(activity.average_heartrate)} bpm</Chip>
           )}
-
           {activity.average_watts && (
-            <Chip>
-              {Math.round(activity.average_watts)} W
-            </Chip>
+            <Chip>{Math.round(activity.average_watts)} W</Chip>
           )}
-
-          {activity.average_speed && (
-            <Chip>
-              {formatMph(
-                activity.average_speed
-              )}
-            </Chip>
-          )}
+          {speedChip() && <Chip>{speedChip()}</Chip>}
         </div>
       </CardContent>
     </Card>

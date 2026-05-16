@@ -11,6 +11,12 @@ pub struct CallbackParams {
     pub state: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct SyncParams {
+    #[serde(default)]
+    pub force: bool,
+}
+
 pub async fn callback_handler(
     Query(params): Query<CallbackParams>,
     State(state): State<AppState>,
@@ -32,10 +38,13 @@ pub async fn callback_handler(
 
 pub async fn sync_handler(
     State(state): State<AppState>,
+    Query(params): Query<SyncParams>,
 ) -> Result<String, String> {
     let user_id = 1;
 
-    let summary = state.strava.sync(user_id)
+    let summary = state
+        .strava
+        .sync(user_id, params.force)
         .await
         .map_err(|e| e.to_string())?;
 
@@ -44,17 +53,9 @@ pub async fn sync_handler(
     println!("Fetched: {}", summary.total_fetched);
     println!("Rate Limits: {:?}", summary.rate_limit);
 
-    Ok("Synced Strava activities".to_string())
+    if params.force {
+        Ok(format!("Backfilled laps for {} activities", summary.updated))
+    } else {
+        Ok("Synced Strava activities".to_string())
+    }
 }
-
-// pub async fn get_activities_handler(
-//     State(state): State<AppState>,
-// ) -> Json<Vec<Activity>> {
-//     let user_id = 1;
-//
-//     let activities = fetch_user_activities(&state, user_id)
-//         .await
-//         .unwrap();
-//
-//     Json(activities)
-// }
