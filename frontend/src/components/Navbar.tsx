@@ -1,24 +1,15 @@
-import { Link, useLocation } from "react-router-dom";
+import { NavLink } from "./ui/nav-link";
 
 export default function Navbar() {
-  const location = useLocation();
-
-  const linkClass = (path: string) =>
-    `px-4 py-2 rounded-lg ${
-      location.pathname === path
-        ? "bg-blue-500 text-white"
-        : "text-gray-600 hover:bg-gray-200"
-    }`;
-
   return (
-    <div className="flex gap-4 p-4 border-b">
-      <Link to="/" className={linkClass("/")}>
+    <div className="flex gap-4 border-b border-zinc-800 p-4">
+      <NavLink to="/">
         Dashboard
-      </Link>
+      </NavLink>
 
-      <Link to="/activities" className={linkClass("/activities")}>
+      <NavLink to="/activities">
         Activities
-      </Link>
+      </NavLink>
     </div>
   );
 }

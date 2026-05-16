@@ -9,28 +9,48 @@ interface MiniMapProps {
   className?: string;
 }
 
-export function MiniMap({
-  encoded,
-  className = "",
-}: MiniMapProps) {
+function FitBounds({ bounds }: { bounds: L.LatLngBounds | null }) {
+  const map = useMap();
+  const hasFitted = useRef(false);
+
+  useEffect(() => {
+    if (hasFitted.current || !bounds) return;
+    map.fitBounds(bounds, { padding: [5, 5] });
+    hasFitted.current = true;
+  }, [map, bounds]);
+
+  return null;
+}
+
+export function MiniMap({ encoded, className = "" }: MiniMapProps) {
   const coordinates = useMemo(() => {
     if (!encoded) return [];
-    return polyline.decode(encoded) as [number, number][];
+    try {
+      return polyline.decode(encoded) as [number, number][];
+    } catch {
+      return [];
+    }
   }, [encoded]);
 
   const bounds = useMemo(() => {
-    if (!coordinates.length) return undefined;
-    return L.latLngBounds(coordinates);
+    if (!coordinates.length) return null;
+    const b = L.latLngBounds(coordinates);
+    return b.isValid() ? b : null;
   }, [coordinates]);
 
-  if (!coordinates.length || !bounds) {
-    return null;
-  }
+  const center = useMemo((): [number, number] => {
+    if (!bounds) return [0, 0];
+    const c = bounds.getCenter();
+    return [c.lat, c.lng];
+  }, [bounds]);
+
+  if (!coordinates.length || !bounds) return null;
 
   return (
-    <div className={className}>
+    <div className={`overflow-hidden ${className}`}>
       <MapContainer
-        bounds={bounds}
+        center={center}
+        zoom={12}
         className="h-full w-full"
         zoomControl={false}
         dragging={false}
@@ -40,24 +60,12 @@ export function MiniMap({
         boxZoom={false}
         keyboard={false}
         attributionControl={false}
-        preferCanvas={true}
       >
         <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+        <FitBounds bounds={bounds} />
         <Polyline
           positions={coordinates}
-          pathOptions={{
-            color: "#ff4d00",
-            weight: 5,
-            opacity: 0.15,
-          }}
-        />
-        <Polyline
-          positions={coordinates}
-          pathOptions={{
-            color: '#fc4c02',
-            weight: 2,
-            opacity: 0.9,
-          }}
+          pathOptions={{ color: "#fc4c02", weight: 2, opacity: 0.9 }}
         />
       </MapContainer>
     </div>

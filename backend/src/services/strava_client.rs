@@ -6,7 +6,7 @@ use crate::models::external::strava::{
     StravaActivityResponse,
     StravaActivityStreamsResponse,
 };
-use crate::models::external::strava::{StravaTokenResponse};
+use crate::models::external::strava::StravaTokenResponse;
 use crate::services::strava_service::RateLimitInfo;
 
 fn extract_rate_limit(headers: &reqwest::header::HeaderMap) -> Option<RateLimitInfo> {
@@ -49,8 +49,8 @@ impl StravaClient {
     }
 
     pub async fn refresh_token(
-        &self, 
-        refresh_token: &str
+        &self,
+        refresh_token: &str,
     ) -> Result<StravaTokenResponse> {
         let res = self
             .http
@@ -96,6 +96,31 @@ impl StravaClient {
         Ok(res.json::<StravaTokenResponse>().await?)
     }
 
+    pub async fn fetch_activity_detail(
+        &self,
+        access_token: &str,
+        activity_id: i64,
+    ) -> Result<StravaActivityResponse> {
+        let url = format!(
+            "https://www.strava.com/api/v3/activities/{}",
+            activity_id
+        );
+
+        let res = self
+            .http
+            .get(&url)
+            .bearer_auth(access_token)
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            let err = res.text().await.unwrap_or_default();
+            anyhow::bail!("Activity detail fetch failed: {}", err);
+        }
+
+        Ok(res.json::<StravaActivityResponse>().await?)
+    }
+
     pub async fn fetch_activity_streams(
         &self,
         access_token: &str,
@@ -107,6 +132,7 @@ impl StravaClient {
             &key_by_type=true",
             activity_id
         );
+
         let res = self
             .http
             .get(&url)
@@ -157,12 +183,6 @@ impl StravaClient {
             page,
             activities.len(),
             activities.first().map(|a| a.id).unwrap_or(-1)
-        );
-
-        println!(
-            "Fetched page {} ({} activities)",
-            page,
-            activities.len()
         );
 
         Ok(ActivitiesPage {

@@ -277,6 +277,20 @@ pub async fn upsert_streams(
     Ok(())
 }
 
+pub async fn get_all_strava_ids(
+    pool: &sqlx::PgPool,
+    user_id: i64,
+) -> Result<Vec<i64>, sqlx::Error> {
+    let rows = sqlx::query!(
+        "SELECT strava_activity_id FROM activities WHERE user_id = $1 ORDER BY start_date DESC",
+        user_id
+    )
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows.into_iter().map(|r| r.strava_activity_id).collect())
+}
+
 pub async fn get_streams(
     pool: &sqlx::PgPool,
     activity_id: i64,
