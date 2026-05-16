@@ -1,7 +1,8 @@
 use crate::models::db::activity::{ActivityRow, ActivityInsert, ActivityStreamsRow, ActivityStreamsInsert};
+use sqlx::PgPool;
 
 pub async fn fetch_all(
-    pool: &sqlx::PgPool
+    pool: &PgPool
 ) -> Result<Vec<ActivityRow>, sqlx::Error> {
     let activities = sqlx::query_as!(
         ActivityRow,
@@ -49,7 +50,7 @@ pub async fn fetch_all(
 }
 
 pub async fn get_by_id(
-    pool: &sqlx::PgPool,
+    pool: &PgPool,
     id: i64,
 ) -> Result<Option<ActivityRow>, sqlx::Error> {
     let row = sqlx::query_as!(
@@ -104,7 +105,7 @@ pub struct InsertResult {
 }
 
 pub async fn insert(
-    pool: &sqlx::PgPool,
+    pool: &PgPool,
     input: &ActivityInsert,
 ) -> Result<InsertResult, sqlx::Error> {
     let rec = sqlx::query!(
@@ -220,9 +221,9 @@ pub async fn insert(
 }
 
 pub async fn get_latest_activity_time(
-    pool: &sqlx::PgPool,
+    pool: &PgPool,
     user_id: i64,
-) -> Result<Option<chrono::NaiveDateTime>, anyhow::Error> {
+) -> Result<Option<chrono::NaiveDateTime>, sqlx::Error> {
     let row = sqlx::query!(
         r#"
         SELECT start_date as "start_date?"
@@ -240,9 +241,9 @@ pub async fn get_latest_activity_time(
 }
 
 pub async fn upsert_streams(
-    pool: &sqlx::PgPool,
+    pool: &PgPool,
     streams: &ActivityStreamsInsert,
-) -> anyhow::Result<()> {
+) -> Result<(), sqlx::Error> {
     sqlx::query!(
         r#"
         INSERT INTO activity_streams
@@ -278,7 +279,7 @@ pub async fn upsert_streams(
 }
 
 pub async fn get_all_strava_ids(
-    pool: &sqlx::PgPool,
+    pool: &PgPool,
     user_id: i64,
 ) -> Result<Vec<i64>, sqlx::Error> {
     let rows = sqlx::query!(
@@ -292,7 +293,7 @@ pub async fn get_all_strava_ids(
 }
 
 pub async fn get_streams(
-    pool: &sqlx::PgPool,
+    pool: &PgPool,
     activity_id: i64,
 ) -> Result<Option<ActivityStreamsRow>, sqlx::Error> {
     let row = sqlx::query_as!(

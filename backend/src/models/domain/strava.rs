@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime, Utc, TimeDelta};
+use chrono::{NaiveDateTime, Utc, Duration};
 
 use crate::models::external::strava::StravaTokenResponse;
 
@@ -26,6 +26,6 @@ impl From<StravaTokenResponse> for StravaToken {
 impl StravaToken {
     pub fn is_expired(&self) -> bool {
         let now = Utc::now().naive_utc();
-        now >= (self.expires_at - TimeDelta::seconds(120))
+        now >= (self.expires_at - Duration::seconds(120))
     }
 }

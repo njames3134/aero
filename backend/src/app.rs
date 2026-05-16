@@ -1,5 +1,4 @@
-use axum::{Router};
-use axum::routing::{get, post};
+use axum::{Router, routing::{get, post}};
 use crate::routes::activities::{get_activities, get_activity, get_streams};
 use crate::routes::strava::{callback_handler, sync_handler};
 use crate::app_state::AppState;
